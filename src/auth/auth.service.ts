@@ -1,17 +1,21 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { registerSchema } from 'src/schema/auth.schema';
 import z from 'zod';
 import axios from 'axios';
+import { ConfigService } from '@nestjs/config';
+import { DiscordUser } from '@repo/types';
+import prisma from 'src/prismaClient';
+import { signJwt } from 'src/utils/jwt';
 
-const REDIRECT_URI = process.env.clientUri
 const API_ENDPOINT = 'https://discord.com/api/v10'
-const CLIENT_SECRET = process.env.discordClientSecret
-const CLIENT_ID = process.env.discordClientId
 
 @Injectable()
 export class AuthService {
+  constructor(private config: ConfigService) {}
+
+
   async create(createAuthDto: CreateAuthDto) {
     // const result = await registerSchema.safeParseAsync(createAuthDto);
 
@@ -51,32 +55,94 @@ export class AuthService {
   }
 
   async oauth2(code: string) {
-    if(!code) throw new UnauthorizedException()
-      console.log(REDIRECT_URI, API_ENDPOINT, CLIENT_ID, CLIENT_SECRET)
-    // const data = new URLSearchParams({
-    //   grant_type: 'authorization_code',
-    //   code: code,
-    //   redirect_uri: REDIRECT_URI!,
-    //   client_id: CLIENT_ID!,
-    //   client_secret: CLIENT_SECRET!
-    // });
+    const REDIRECT_URI = this.config.get('clientUri')
+    const CLIENT_ID = this.config.get('discordClientId')
+    const CLIENT_SECRET = this.config.get('discordClientSecret')
+    const API_ENDPOINT = 'https://discord.com/api/v10'
+    const JWTSECRET = this.config.get('jwtsecretKey')
 
-    // const headers = {
-    //   'Content-Type': 'application/x-www-form-urlencoded'
-    // };
+    if(!code) throw new UnauthorizedException('Missing code')
 
-    // const response = await fetch(`${API_ENDPOINT}/oauth2/token`, {
-    //   method: 'POST',
-    //   headers: headers,
-    //   body: data.toString()
-    // });
+    const data = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: code.toString(),
+      redirect_uri: REDIRECT_URI,
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET
+    });
 
-    // if (!response.ok) {
-    //   const errorBody = await response.text();
-    //   throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
-    // }
-    // console.log(response)
-    // return response.data;
+    const response = await axios.post(`${API_ENDPOINT}/oauth2/token`, data, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    })
+
+    const accessToken = response.data.access_token
+    if (!accessToken) {
+      throw new UnauthorizedException('No access token from Discord');
+    }
+
+    // get user info
+    const userInfo = await axios.get(`${API_ENDPOINT}/users/@me`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+
+    const { id, username, avatar, global_name, email } = userInfo.data as DiscordUser
+
+    // find a user with the Discord ID
+    let user = await prisma.user.findUnique({ 
+      where: { discordId: id } 
+    });
+
+    // if no user found with Discord ID, try to find by email
+    if (!user) {
+      user = await prisma.user.findUnique({
+        where: { email }
+      });
+      
+      if (user) {
+        // update existing user with Discord ID
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { 
+            discordId: id,
+          }
+        });
+      } else {
+        // create new user with Discord account info
+        user = await prisma.user.create({
+          data: {
+            discordId: id,
+            name: global_name ?? "Discord User",
+            username: username ?? "",
+            email,
+            role: "USER",
+            avatar
+          }
+        });
+      }
+    }
+
+    const token = signJwt(
+      { id: user.id },
+      JWTSECRET,
+      { expiresIn: "7d" }
+    )
+
+    const userData = {
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      avatar: user.avatar,
+      status: user.status,
+      role: user.role,
+      createdAt: user.createdAt,
+    } 
+
+    return { token, userData }
   }
 
   findAll() {
