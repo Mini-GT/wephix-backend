@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -16,14 +15,16 @@ datasource db {
 
 model User {
   id                     String               @id @default(cuid())
+  discordId              String?              @unique
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @default(now()) @updatedAt
   email                  String               @unique
   status                 Status               @default(unverified)
   role                   Role                 @default(USER)
+  username               String?
   name                   String?
   password               String?
-  profileImage           String?
+  avatar                 String?
   emailVerifyToken       String?
   emailVerifyTokenExpiry DateTime?
   forgotPassTokenExpiry  DateTime?
