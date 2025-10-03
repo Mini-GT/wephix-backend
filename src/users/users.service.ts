@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import prisma from 'src/prismaClient';
 
 @Injectable()
 export class UsersService {
   create(createUserDto: CreateUserDto) {
-    console.log(createUserDto)
+    console.log(createUserDto);
     // return 'This action adds a new user';
   }
 
@@ -13,8 +14,25 @@ export class UsersService {
     return `This action returns all users`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async getUserById(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        email: true,
+        status: true,
+        role: true,
+        discordId: true,
+        username: true,
+        global_name: true,
+        avatar: true,
+        pixels_painted: true,
+      },
+    });
+    return { user };
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
