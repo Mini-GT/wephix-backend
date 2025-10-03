@@ -22,7 +22,8 @@ model User {
   status                 Status               @default(unverified)
   role                   Role                 @default(USER)
   username               String?
-  name                   String?
+  global_name            String?
+  pixels_painted         Int?
   password               String?
   avatar                 String?
   emailVerifyToken       String?
