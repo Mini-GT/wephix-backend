@@ -26,6 +26,7 @@ model User {
   pixels_painted         Int?
   password               String?
   avatar                 String?
+  profileImage           String?
   emailVerifyToken       String?
   emailVerifyTokenExpiry DateTime?
   forgotPassTokenExpiry  DateTime?
