@@ -33,17 +33,23 @@ export class AuthController {
   async oauth2(
     @Res({ passthrough: true }) res: Response,
     @Query('code') code: string,
+    @Query('error') error: string,
   ) {
+    // return to redirect user if they cancel the oauth
+    if (error) {
+      return;
+    }
+
     const NODE_ENV = this.config.get('NODE_ENV');
     const { token } = await this.authService.oauth2(code);
-    res.cookie('token', token, {
+    res.cookie('loginToken', token, {
       httpOnly: true,
       secure: NODE_ENV,
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.cookie('isLogin', true, {
+    res.cookie('hasLoginToken', true, {
       httpOnly: false,
       secure: NODE_ENV,
       sameSite: 'strict',
