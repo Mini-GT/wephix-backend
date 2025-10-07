@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import prisma from 'src/prismaClient';
+import calculateCharges from 'src/utils/calculateCharges';
 
 @Injectable()
 export class UsersService {
@@ -15,7 +16,7 @@ export class UsersService {
   }
 
   async getUserById(userId: string) {
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: {
         id: userId,
       },
@@ -23,16 +24,43 @@ export class UsersService {
         id: true,
         createdAt: true,
         email: true,
+        name: true,
+        profileImage: true,
         status: true,
         role: true,
-        discordId: true,
-        username: true,
-        global_name: true,
-        avatar: true,
-        pixels_painted: true,
+        totalPixelsPlaced: true,
+        charges: true,
+        cooldownUntil: true,
+        discord: {
+          select: {
+            discordId: true,
+            username: true,
+            global_name: true,
+            avatar: true,
+          },
+        },
       },
     });
-    return { user };
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const { charges, cooldownUntil } = calculateCharges({
+      charges: user.charges,
+      cooldownUntil: user.cooldownUntil,
+    });
+
+    if (charges !== user.charges || cooldownUntil !== user.cooldownUntil) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { charges, cooldownUntil },
+      });
+
+      user = { ...user, charges, cooldownUntil };
+    }
+
+    return { ...user, charges, cooldownUntil };
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {

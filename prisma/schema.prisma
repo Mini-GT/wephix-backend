@@ -13,26 +13,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                     String               @id @default(cuid())
-  discordId              String?              @unique
-  createdAt              DateTime             @default(now())
-  updatedAt              DateTime             @default(now()) @updatedAt
-  email                  String               @unique
-  status                 Status               @default(unverified)
-  role                   Role                 @default(USER)
-  username               String?
-  global_name            String?
-  pixels_painted         Int?
-  password               String?
-  avatar                 String?
-  profileImage           String?
-  emailVerifyToken       String?
-  emailVerifyTokenExpiry DateTime?
-  forgotPassTokenExpiry  DateTime?
-  forgotPassVerifyToken  String?
-}
-
 enum Role {
   USER
   ADMIN
@@ -46,4 +26,86 @@ enum Status {
   banned
   pending
   suspended
+}
+
+model User {
+  id                     String    @id @default(cuid())
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @default(now()) @updatedAt
+  email                  String    @unique
+  status                 Status    @default(unverified)
+  name String
+  role                   Role      @default(USER)
+  password               String?
+  profileImage           String?
+  emailVerifyToken       String?
+  emailVerifyTokenExpiry DateTime?
+  forgotPassTokenExpiry  DateTime?
+  forgotPassVerifyToken  String?
+
+  // pixel related
+  totalPixelsPlaced Int       @default(0)
+  charges           Int       @default(30) // how many uses left
+  cooldownUntil     DateTime? // when next charge regenerates
+
+  // Relations
+  factionLinks UserFaction[]
+  pixels       Pixel[]
+  discord      Discord?
+}
+
+model Discord {
+  id          Int     @id @default(autoincrement())
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String  @unique
+  discordId   String  @unique
+  username               String @unique
+  global_name String?
+  avatar      String?
+}
+
+model Faction {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  color     String
+  createdAt DateTime @default(now())
+
+  members UserFaction[]
+  pixels  Pixel[]
+}
+
+model UserFaction {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  faction   Faction  @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  factionId Int
+  joinedAt  DateTime @default(now())
+
+  @@unique([userId, factionId])
+}
+
+model Canvas {
+  id        Int      @id @default(autoincrement())
+  name      String
+  gridSize  Int      @default(300)
+  createdAt DateTime @default(now())
+
+  pixels Pixel[]
+}
+
+model Pixel {
+  id        Int      @id @default(autoincrement())
+  canvas    Canvas   @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  canvasId  Int
+  x         Int
+  y         Int
+  color     String
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  faction   Faction? @relation(fields: [factionId], references: [id], onDelete: SetNull)
+  factionId Int?
+  placedAt  DateTime @default(now())
+
+  @@unique([canvasId, x, y])
 }

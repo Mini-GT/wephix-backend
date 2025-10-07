@@ -3,10 +3,9 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
-import { DiscordUser } from '@repo/types';
 import prisma from 'src/prismaClient';
 import { signJwt } from 'src/utils/jwt';
-import { type Response } from 'express';
+import { DiscordFields, User } from '@repo/types';
 
 @Injectable()
 export class AuthService {
@@ -77,44 +76,69 @@ export class AuthService {
     });
 
     const { id, username, avatar, global_name, email } =
-      userInfo.data as DiscordUser;
+      userInfo.data as DiscordFields & User;
 
     // find a user with the Discord ID
-    let user = await prisma.user.findUnique({
+    let discordUser = await prisma.discord.findUnique({
       where: { discordId: id },
+      include: { user: true },
     });
 
-    // if no user found with Discord ID, try to find by email
-    if (!user) {
-      user = await prisma.user.findUnique({
-        where: { email },
+    // if discord user found with Discord ID, update user data
+    if (discordUser) {
+      discordUser = await prisma.discord.update({
+        where: { discordId: id },
+        data: {
+          username,
+          global_name,
+          avatar,
+          user: {
+            update: { updatedAt: new Date() },
+          },
+        },
+        include: { user: true },
       });
 
-      if (user) {
-        // update existing user with Discord ID
-        user = await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            discordId: id,
+      const token = signJwt({ id: discordUser.user.id }, JWTSECRET, {
+        expiresIn: '7d',
+      });
+      return { token };
+    }
+
+    // if no discord user, find user with the same email
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    // if user found with same email, link discord to that user
+    if (user) {
+      await prisma.discord.create({
+        data: {
+          discordId: id,
+          username,
+          global_name,
+          avatar,
+          user: { connect: { id: user.id } },
+        },
+      });
+    } else {
+      // if no user found with same email, create a new user and link discord
+      user = await prisma.user.create({
+        data: {
+          email,
+          name: global_name ?? 'Discord User',
+          role: 'USER',
+          discord: {
+            create: {
+              discordId: id,
+              username,
+              global_name,
+              avatar,
+            },
           },
-        });
-      } else {
-        // create new user with Discord account info
-        user = await prisma.user.create({
-          data: {
-            discordId: id,
-            global_name: global_name ?? 'Discord User',
-            username: username ?? '',
-            email,
-            role: 'USER',
-            avatar,
-          },
-        });
-      }
+        },
+      });
     }
 
     const token = signJwt({ id: user.id }, JWTSECRET, { expiresIn: '7d' });
-
     return { token };
   }
 
