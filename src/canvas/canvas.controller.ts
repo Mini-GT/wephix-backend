@@ -20,14 +20,14 @@ export class CanvasController {
     return this.canvasService.create(createCanvasDto);
   }
 
-  @Get()
-  findAll() {
-    return this.canvasService.findAll();
-  }
+  // @Get()
+  // getMainCanvas() {
+  //   return this.canvasService.getMainCanvas();
+  // }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.canvasService.findOne(+id);
+  @Get(':canvasId')
+  findOne(@Param('canvasId') canvasId: string) {
+    return this.canvasService.findOne(+canvasId);
   }
 
   @Patch(':canvasId')
@@ -35,7 +35,7 @@ export class CanvasController {
     @Param('canvasId') canvasId: string,
     @Body() updateCanvasDto: UpdateCanvasDto,
   ) {
-    return this.canvasService.updateCanvas(canvasId, updateCanvasDto);
+    return this.canvasService.updateCanvasPixel(+canvasId, updateCanvasDto);
   }
 
   @Delete(':id')

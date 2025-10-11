@@ -6,13 +6,37 @@ import calculateCharges from 'src/utils/calculateCharges';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    console.log(createUserDto);
-    // return 'This action adds a new user';
-  }
+  async getPaintCharges(id: string) {
+    let userPaintCharges = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        charges: true,
+        cooldownUntil: true,
+      },
+    });
 
-  findAll() {
-    return `This action returns all users`;
+    if (!userPaintCharges) {
+      throw new NotFoundException('User not found');
+    }
+
+    const { charges, cooldownUntil } = calculateCharges({
+      charges: userPaintCharges.charges,
+      cooldownUntil: userPaintCharges.cooldownUntil,
+    });
+
+    if (
+      charges !== userPaintCharges.charges ||
+      cooldownUntil !== userPaintCharges.cooldownUntil
+    ) {
+      await prisma.user.update({
+        where: { id },
+        data: { charges, cooldownUntil },
+      });
+
+      userPaintCharges = { charges, cooldownUntil };
+    }
+
+    return { charges, cooldownUntil };
   }
 
   async getUserById(userId: string) {
@@ -29,8 +53,6 @@ export class UsersService {
         status: true,
         role: true,
         totalPixelsPlaced: true,
-        charges: true,
-        cooldownUntil: true,
         discord: {
           select: {
             discordId: true,
@@ -46,21 +68,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const { charges, cooldownUntil } = calculateCharges({
-      charges: user.charges,
-      cooldownUntil: user.cooldownUntil,
-    });
-
-    if (charges !== user.charges || cooldownUntil !== user.cooldownUntil) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { charges, cooldownUntil },
-      });
-
-      user = { ...user, charges, cooldownUntil };
-    }
-
-    return { ...user, charges, cooldownUntil };
+    return { ...user };
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
