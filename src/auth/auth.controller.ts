@@ -15,6 +15,7 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { ConfigService } from '@nestjs/config';
 import { type Response } from 'express';
+import { LoginAuthDto } from './dto/login-auth.dto';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -25,7 +26,32 @@ export class AuthController {
 
   @Post('register')
   create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+    return this.authService.register(createAuthDto);
+  }
+
+  @Post('login')
+  async login(
+    @Res({ passthrough: true }) res: Response,
+    @Body() loginAuthDto: LoginAuthDto,
+  ) {
+    const NODE_ENV = this.config.get('NODE_ENV');
+
+    const { token } = await this.authService.login(loginAuthDto);
+    res.cookie('loginToken', token, {
+      httpOnly: true,
+      secure: NODE_ENV,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie('hasLoginToken', true, {
+      httpOnly: false,
+      secure: NODE_ENV,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return 'Login successful';
   }
 
   @Get('discord')

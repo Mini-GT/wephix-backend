@@ -1,4 +1,9 @@
-import { Injectable, Res, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import axios from 'axios';
@@ -6,39 +11,69 @@ import { ConfigService } from '@nestjs/config';
 import prisma from 'src/prismaClient';
 import { signJwt } from 'src/utils/jwt';
 import { DiscordFields, User } from '@repo/types';
+import bcrypt from 'node_modules/bcryptjs';
+import { LoginAuthDto } from './dto/login-auth.dto';
 
 @Injectable()
 export class AuthService {
   constructor(private config: ConfigService) {}
 
-  async create(createAuthDto: CreateAuthDto) {
-    // const result = await registerSchema.safeParseAsync(createAuthDto);
-    // if (!result.success) {
-    //   const flattened = z.flattenError(result.error)
-    //   throw new BadRequestException(flattened.fieldErrors)
-    // }
-    // const { name, email, password } = result.data;
-    // const existingUser = await prisma.user.findUnique({
-    //   where: {
-    //     email,
-    //   }
-    // })
-    // if (existingUser) {
-    //   return res.status(400).json({ message: "User already exists" });
-    // }
-    // const hashedPassword = await bcrypt.hash(password, 8)
-    // const user = await prisma.user.create({
-    //   data: {
-    //     name,
-    //     email,
-    //     password: hashedPassword,
-    //     role: "USER",
-    //   }
-    // })
-    // if(!user) {
-    //   res.status(500).json({ message: "Cannot create an account" })
-    // }
-    // res.status(201).json({ message: "User created" });
+  async register(createAuthDto: CreateAuthDto) {
+    if (createAuthDto.password !== createAuthDto.confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    const { name, email, password } = createAuthDto;
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 8);
+
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: 'USER',
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Could not create an account');
+    }
+
+    return 'User registered';
+  }
+
+  async login(loginAuthDto: LoginAuthDto) {
+    const JWTSECRET = this.config.get('jwtsecretKey');
+
+    const user = await prisma.user.findUnique({
+      where: { email: loginAuthDto.email },
+    });
+
+    if (!user || !user.password) {
+      throw new BadRequestException('Incorrect email or password');
+    }
+
+    const isMatch = await bcrypt.compare(loginAuthDto.password, user.password);
+
+    if (!isMatch) {
+      throw new BadRequestException('Incorrect email or password');
+    }
+
+    const token = signJwt({ id: user.id }, JWTSECRET, {
+      expiresIn: '7d',
+    });
+
+    return { token };
   }
 
   async oauth2(code: string) {
@@ -102,6 +137,7 @@ export class AuthService {
       const token = signJwt({ id: discordUser.user.id }, JWTSECRET, {
         expiresIn: '7d',
       });
+
       return { token };
     }
 
