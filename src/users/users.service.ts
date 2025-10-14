@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import prisma from 'src/prismaClient';
-import calculateCharges from 'src/utils/calculateCharges';
+import calculateCharges from '../utils/calculateCharges';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
+  constructor(private prisma: PrismaService) {}
+
   async getPaintCharges(id: string) {
-    let userPaintCharges = await prisma.user.findUnique({
+    let userPaintCharges = await this.prisma.user.findUnique({
       where: { id },
       select: {
         charges: true,
@@ -28,7 +29,7 @@ export class UsersService {
       charges !== userPaintCharges.charges ||
       cooldownUntil !== userPaintCharges.cooldownUntil
     ) {
-      await prisma.user.update({
+      await this.prisma.user.update({
         where: { id },
         data: { charges, cooldownUntil },
       });
@@ -40,7 +41,7 @@ export class UsersService {
   }
 
   async getUserById(userId: string) {
-    let user = await prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: {
         id: userId,
       },

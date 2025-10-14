@@ -8,15 +8,18 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
-import prisma from 'src/prismaClient';
-import { signJwt } from 'src/utils/jwt';
+import { signJwt } from '../utils/jwt';
 import { DiscordFields, User } from '@repo/types';
-import bcrypt from 'node_modules/bcryptjs';
+import bcrypt from 'bcryptjs';
 import { LoginAuthDto } from './dto/login-auth.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private config: ConfigService) {}
+  constructor(
+    private config: ConfigService,
+    private prisma: PrismaService,
+  ) {}
 
   async register(createAuthDto: CreateAuthDto) {
     if (createAuthDto.password !== createAuthDto.confirmPassword) {
@@ -24,7 +27,7 @@ export class AuthService {
     }
 
     const { name, email, password } = createAuthDto;
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await this.prisma.user.findUnique({
       where: {
         email,
       },
@@ -36,7 +39,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 8);
 
-    const user = await prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         name,
         email,
@@ -55,7 +58,7 @@ export class AuthService {
   async login(loginAuthDto: LoginAuthDto) {
     const JWTSECRET = this.config.get('jwtsecretKey');
 
-    const user = await prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { email: loginAuthDto.email },
     });
 
@@ -114,14 +117,14 @@ export class AuthService {
       userInfo.data as DiscordFields & User;
 
     // find a user with the Discord ID
-    let discordUser = await prisma.discord.findUnique({
+    let discordUser = await this.prisma.discord.findUnique({
       where: { discordId: id },
       include: { user: true },
     });
 
     // if discord user found with Discord ID, update user data
     if (discordUser) {
-      discordUser = await prisma.discord.update({
+      discordUser = await this.prisma.discord.update({
         where: { discordId: id },
         data: {
           username,
@@ -142,11 +145,11 @@ export class AuthService {
     }
 
     // if no discord user, find user with the same email
-    let user = await prisma.user.findUnique({ where: { email } });
+    let user = await this.prisma.user.findUnique({ where: { email } });
 
     // if user found with same email, link discord to that user
     if (user) {
-      await prisma.discord.create({
+      await this.prisma.discord.create({
         data: {
           discordId: id,
           username,
@@ -157,7 +160,7 @@ export class AuthService {
       });
     } else {
       // if no user found with same email, create a new user and link discord
-      user = await prisma.user.create({
+      user = await this.prisma.user.create({
         data: {
           email,
           name: global_name ?? 'Discord User',
