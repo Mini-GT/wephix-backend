@@ -31,7 +31,7 @@ export class CanvasController {
   }
 
   @Patch(':canvasId')
-  update(
+  updateCanvasPixel(
     @Param('canvasId') canvasId: string,
     @Body() updateCanvasDto: UpdateCanvasDto,
   ) {

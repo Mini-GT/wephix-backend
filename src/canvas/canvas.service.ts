@@ -1,18 +1,66 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { CreateCanvasDto } from './dto/create-canvas.dto';
 import { UpdateCanvasDto } from './dto/update-canvas.dto';
-import prisma from 'src/prismaClient';
-import calculateCharges from 'src/utils/calculateCharges';
-import { User } from '@repo/types';
+import calculateCharges from '../utils/calculateCharges';
+import { PrismaService } from '../prisma/prisma.service';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class CanvasService {
+  constructor(
+    private prisma: PrismaService,
+    private socket: EventsGateway,
+  ) {}
+
+  // private canvas = new Map<string, PixelType>();
+
+  // on server restart
+  // onModuleInit() {
+  //   fetch data and save to memory
+  //   this.loadDataFromDB();
+  //   save the canvas memory to database
+  //   this.task.handleCron();
+  // }
+
+  // private async loadDataFromDB() {
+  //   const pixels = await this.prisma.pixel.findMany({
+  //     where: {
+  //       canvasId: 1,
+  //     },
+  //     select: {
+  //       x: true,
+  //       y: true,
+  //       color: true,
+  //       user: {
+  //         select: {
+  //           name: true,
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   pixels.forEach((p) => {
+  //     const pixel = {
+  //       x: p.x,
+  //       y: p.y,
+  //       color: p.color,
+  //       user: p.user?.name ?? null,
+  //     };
+
+  //     this.canvas.set(`${p.x},${p.y}`, pixel);
+  //   });
+
+  //   console.log(`Loaded ${pixels.length} pixels from database`);
+  // }
+
   async create(createCanvasDto: CreateCanvasDto) {
-    await prisma.canvas.create({
+    await this.prisma.canvas.create({
       data: {
         name: createCanvasDto.name.toUpperCase(),
         gridSize: parseInt(createCanvasDto.gridSize),
@@ -22,12 +70,8 @@ export class CanvasService {
     return 'Canvas created successfully';
   }
 
-  // async getMainCanvas() {
-  //   return 'main canvas';
-  // }
-
   async findOne(canvasId: number) {
-    const canvas = await prisma.canvas.findUnique({
+    const canvas = await this.prisma.canvas.findUnique({
       where: { id: canvasId },
       select: {
         id: true,
@@ -48,13 +92,17 @@ export class CanvasService {
       },
     });
 
+    if (!canvas) {
+      throw new NotFoundException('Canvas not found');
+    }
+
     return { ...canvas };
   }
 
   async updateCanvasPixel(canvasId: number, updateCanvasDto: UpdateCanvasDto) {
-    let user = await prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { id: updateCanvasDto.userId },
-      select: { id: true, charges: true, cooldownUntil: true },
+      select: { id: true, charges: true, cooldownUntil: true, name: true },
     });
 
     if (!user) throw new NotFoundException('User not found');
@@ -72,7 +120,7 @@ export class CanvasService {
         ? new Date(Date.now() + RECHARGE_TIME)
         : cooldownUntil;
 
-    await prisma.user.update({
+    await this.prisma.user.update({
       where: { id: user.id },
       data: {
         charges: newCharges,
@@ -81,7 +129,17 @@ export class CanvasService {
       },
     });
 
-    await prisma.pixel.upsert({
+    // check x and y bounds
+    if (
+      updateCanvasDto.x < 0 ||
+      updateCanvasDto.x >= 299 ||
+      updateCanvasDto.y < 0 ||
+      updateCanvasDto.y >= 299
+    ) {
+      throw new BadRequestException('Invalid coordinates');
+    }
+
+    const res = await this.prisma.pixel.upsert({
       where: {
         canvasId_x_y: {
           canvasId: canvasId,
@@ -103,6 +161,16 @@ export class CanvasService {
         userId: updateCanvasDto.userId,
       },
     });
+
+    const pixel = {
+      x: res.x,
+      y: res.y,
+      color: res.color,
+      userId: user.id,
+    };
+
+    // this.socket.server.broadcast.emit('pixel', {});
+    this.socket.handleUpdatedPixel(pixel);
 
     return 'Canvas updated successfully';
   }
