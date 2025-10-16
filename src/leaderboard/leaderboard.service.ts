@@ -24,6 +24,9 @@ export class LeaderboardService {
           },
         },
       },
+      orderBy: {
+        totalPixelsPlaced: 'desc',
+      },
     });
 
     if (!users) {
