@@ -3,13 +3,13 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
 import { CreateCanvasDto } from './dto/create-canvas.dto';
 import { UpdateCanvasDto } from './dto/update-canvas.dto';
 import calculateCharges from '../utils/calculateCharges';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventsGateway } from '../events/events.gateway';
+import { InspectCanvasDto } from './dto/inspect-canvas.dto';
 
 @Injectable()
 export class CanvasService {
@@ -173,6 +173,39 @@ export class CanvasService {
     this.socket.handleUpdatedPixel(pixel);
 
     return 'Canvas updated successfully';
+  }
+
+  async inspectCanvasCell(canvasId: number, inspectDto: InspectCanvasDto) {
+    const pixelData = await this.prisma.pixel.findUnique({
+      where: {
+        canvasId_x_y: {
+          canvasId: canvasId,
+          x: inspectDto.x,
+          y: inspectDto.y,
+        },
+      },
+      select: {
+        x: true,
+        y: true,
+        user: {
+          select: {
+            name: true,
+          },
+        },
+        faction: {
+          select: {
+            name: true,
+          },
+        },
+        placedAt: true,
+      },
+    });
+
+    if (!pixelData) {
+      throw new NotFoundException('No data');
+    }
+
+    return pixelData;
   }
 
   remove(id: number) {

@@ -1,9 +1,7 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateCanvasDto } from './create-canvas.dto';
 import { User } from '@repo/types';
 import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
-export class UpdateCanvasDto extends PartialType(CreateCanvasDto) {
+export class UpdateCanvasDto {
   @IsNumber()
   @IsNotEmpty()
   x: number;

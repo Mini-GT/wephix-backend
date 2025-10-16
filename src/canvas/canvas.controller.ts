@@ -10,6 +10,7 @@ import {
 import { CanvasService } from './canvas.service';
 import { CreateCanvasDto } from './dto/create-canvas.dto';
 import { UpdateCanvasDto } from './dto/update-canvas.dto';
+import { InspectCanvasDto } from './dto/inspect-canvas.dto';
 
 @Controller('api/v1/canvas')
 export class CanvasController {
@@ -20,10 +21,13 @@ export class CanvasController {
     return this.canvasService.create(createCanvasDto);
   }
 
-  // @Get()
-  // getMainCanvas() {
-  //   return this.canvasService.getMainCanvas();
-  // }
+  @Post('inspect/:canvasId')
+  inspectCanvasCell(
+    @Param('canvasId') canvasId: string,
+    @Body() inspectCanvasDto: InspectCanvasDto,
+  ) {
+    return this.canvasService.inspectCanvasCell(+canvasId, inspectCanvasDto);
+  }
 
   @Get(':canvasId')
   findOne(@Param('canvasId') canvasId: string) {
