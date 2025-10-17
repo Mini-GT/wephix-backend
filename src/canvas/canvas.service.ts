@@ -13,6 +13,7 @@ import { InspectCanvasDto } from './dto/inspect-canvas.dto';
 
 @Injectable()
 export class CanvasService {
+  private maxPaintCharges: 30;
   constructor(
     private prisma: PrismaService,
     private socket: EventsGateway,
@@ -100,6 +101,27 @@ export class CanvasService {
   }
 
   async updateCanvasPixel(canvasId: number, updateCanvasDto: UpdateCanvasDto) {
+    const canvas = await this.prisma.canvas.findUnique({
+      where: { id: canvasId },
+      select: {
+        gridSize: true,
+      },
+    });
+
+    if (!canvas) {
+      throw new NotFoundException('Canvas not found');
+    }
+
+    // check x and y bounds
+    if (
+      updateCanvasDto.x < 0 ||
+      updateCanvasDto.x >= canvas.gridSize ||
+      updateCanvasDto.y < 0 ||
+      updateCanvasDto.y >= canvas.gridSize
+    ) {
+      throw new BadRequestException('Invalid coordinates');
+    }
+
     let user = await this.prisma.user.findUnique({
       where: { id: updateCanvasDto.userId },
       select: { id: true, charges: true, cooldownUntil: true, name: true },
@@ -116,7 +138,7 @@ export class CanvasService {
     const newCharges = charges - 1;
     const RECHARGE_TIME = 30 * 1000;
     const newCooldown =
-      charges === 30 // if they spent from full
+      charges === this.maxPaintCharges // if they spent from full
         ? new Date(Date.now() + RECHARGE_TIME)
         : cooldownUntil;
 
@@ -128,16 +150,6 @@ export class CanvasService {
         totalPixelsPlaced: { increment: 1 },
       },
     });
-
-    // check x and y bounds
-    if (
-      updateCanvasDto.x < 0 ||
-      updateCanvasDto.x >= 299 ||
-      updateCanvasDto.y < 0 ||
-      updateCanvasDto.y >= 299
-    ) {
-      throw new BadRequestException('Invalid coordinates');
-    }
 
     const res = await this.prisma.pixel.upsert({
       where: {
@@ -190,6 +202,11 @@ export class CanvasService {
         user: {
           select: {
             name: true,
+            discord: {
+              select: {
+                username: true,
+              },
+            },
           },
         },
         faction: {
@@ -202,7 +219,7 @@ export class CanvasService {
     });
 
     if (!pixelData) {
-      throw new NotFoundException('No data');
+      return { x: inspectDto.x, y: inspectDto.y, user: { name: null } };
     }
 
     return pixelData;
