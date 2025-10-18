@@ -163,7 +163,7 @@ export class LeaderboardService {
       monthly: monthlyLeaderboard,
     };
 
-    if (!users) {
+    if (!users.allTime.length) {
       throw new NotFoundException('No users found');
     }
 
