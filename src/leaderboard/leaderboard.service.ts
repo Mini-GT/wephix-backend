@@ -70,8 +70,10 @@ export class LeaderboardService {
       return {
         id: user?.id,
         name: user?.name,
-        username: user?.discord?.username,
-        globalName: user?.discord?.global_name,
+        discord: {
+          username: user?.discord?.username,
+          globalName: user?.discord?.global_name,
+        },
         totalPixelsPlaced: d._sum.count ?? 0,
       };
     });
@@ -106,8 +108,10 @@ export class LeaderboardService {
       return {
         id: user?.id,
         name: user?.name,
-        username: user?.discord?.username,
-        globalName: user?.discord?.global_name,
+        discord: {
+          username: user?.discord?.username,
+          globalName: user?.discord?.global_name,
+        },
         totalPixelsPlaced: w._sum.count ?? 0,
       };
     });
@@ -142,8 +146,10 @@ export class LeaderboardService {
       return {
         id: user?.id,
         name: user?.name,
-        username: user?.discord?.username,
-        globalName: user?.discord?.global_name,
+        discord: {
+          username: user?.discord?.username,
+          globalName: user?.discord?.global_name,
+        },
         totalPixelsPlaced: m._sum.count ?? 0,
       };
     });
