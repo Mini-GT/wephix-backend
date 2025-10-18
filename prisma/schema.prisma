@@ -34,7 +34,7 @@ model User {
   updatedAt              DateTime  @default(now()) @updatedAt
   email                  String    @unique
   status                 Status    @default(unverified)
-  name String
+  name                   String
   role                   Role      @default(USER)
   password               String?
   profileImage           String?
@@ -52,6 +52,7 @@ model User {
   factionLinks UserFaction[]
   pixels       Pixel[]
   discord      Discord?
+  pixelStats   PixelStats[]
 }
 
 model Discord {
@@ -59,7 +60,7 @@ model Discord {
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String  @unique
   discordId   String  @unique
-  username               String @unique
+  username    String  @unique
   global_name String?
   avatar      String?
 }
@@ -108,4 +109,14 @@ model Pixel {
   placedAt  DateTime @default(now())
 
   @@unique([canvasId, x, y])
+}
+
+model PixelStats {
+  id     Int      @id @default(autoincrement())
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  date   DateTime
+  count  Int      @default(0)
+
+  @@unique([userId, date])
 }
