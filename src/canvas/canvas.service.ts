@@ -10,6 +10,7 @@ import calculateCharges from '../utils/calculateCharges';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventsGateway } from '../events/events.gateway';
 import { InspectCanvasDto } from './dto/inspect-canvas.dto';
+import { startOfDay } from 'date-fns';
 
 @Injectable()
 export class CanvasService {
@@ -101,6 +102,9 @@ export class CanvasService {
   }
 
   async updateCanvasPixel(canvasId: number, updateCanvasDto: UpdateCanvasDto) {
+    const now = new Date();
+    const today = startOfDay(now);
+
     const canvas = await this.prisma.canvas.findUnique({
       where: { id: canvasId },
       select: {
@@ -135,22 +139,6 @@ export class CanvasService {
       throw new ForbiddenException('No charges left!');
     }
 
-    const newCharges = charges - 1;
-    const RECHARGE_TIME = 30 * 1000;
-    const newCooldown =
-      charges === this.maxPaintCharges // if they spent from full
-        ? new Date(Date.now() + RECHARGE_TIME)
-        : cooldownUntil;
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        charges: newCharges,
-        cooldownUntil: newCooldown,
-        totalPixelsPlaced: { increment: 1 },
-      },
-    });
-
     const res = await this.prisma.pixel.upsert({
       where: {
         canvasId_x_y: {
@@ -172,6 +160,30 @@ export class CanvasService {
         color: updateCanvasDto.color,
         userId: updateCanvasDto.userId,
       },
+    });
+
+    const newCharges = charges - 1;
+    const RECHARGE_TIME = 30 * 1000;
+    const newCooldown =
+      charges === this.maxPaintCharges // if they spent from full
+        ? new Date(Date.now() + RECHARGE_TIME)
+        : cooldownUntil;
+
+    // update user pixel data
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        charges: newCharges,
+        cooldownUntil: newCooldown,
+        totalPixelsPlaced: { increment: 1 },
+      },
+    });
+
+    // update user daily stats
+    await this.prisma.pixelStats.upsert({
+      where: { userId_date: { userId: updateCanvasDto.userId, date: today } },
+      update: { count: { increment: 1 } },
+      create: { userId: updateCanvasDto.userId, date: today, count: 1 },
     });
 
     const pixel = {
