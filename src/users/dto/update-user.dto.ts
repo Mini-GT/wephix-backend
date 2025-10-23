@@ -42,7 +42,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @MaxLength(40, {
     message: 'Confirm password must not be more than 40 characters long',
   })
-  confirmPassword?: string;
+  confirmNewPassword?: string;
 
   @IsString()
   @IsOptional()

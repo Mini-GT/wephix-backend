@@ -83,7 +83,7 @@ export class UsersService {
       newName,
       currentPassword,
       newPassword,
-      confirmPassword,
+      confirmNewPassword,
       currentProfileImage,
       newProfileImage,
     } = updateUserDto;
@@ -122,7 +122,7 @@ export class UsersService {
 
     // change password if password fields are not empty
     if (currentPassword && newPassword) {
-      if (newPassword !== confirmPassword) {
+      if (newPassword !== confirmNewPassword) {
         throw new BadRequestException(
           'New password and confirm password do not match',
         );
