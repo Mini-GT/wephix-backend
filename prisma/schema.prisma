@@ -28,6 +28,11 @@ enum Status {
   suspended
 }
 
+enum GuildRole {
+  LEADER
+  MEMBER
+}
+
 model User {
   id                     String    @id @default(cuid())
   createdAt              DateTime  @default(now())
@@ -49,10 +54,10 @@ model User {
   cooldownUntil     DateTime? // when next charge regenerates
 
   // Relations
-  factionLinks UserFaction[]
-  pixels       Pixel[]
-  discord      Discord?
-  pixelStats   PixelStats[]
+  guildLinks UserGuild[]
+  pixels     Pixel[]
+  discord    Discord?
+  pixelStats PixelStats[]
 }
 
 model Discord {
@@ -65,25 +70,28 @@ model Discord {
   avatar      String?
 }
 
-model Faction {
+model Guild {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  color     String
   createdAt DateTime @default(now())
+  description String?
+  inviteCode   String      @unique @default(cuid())
+  isOpen       Boolean     @default(false) 
 
-  members UserFaction[]
+  members UserGuild[]
   pixels  Pixel[]
 }
 
-model UserFaction {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  faction   Faction  @relation(fields: [factionId], references: [id], onDelete: Cascade)
-  factionId Int
-  joinedAt  DateTime @default(now())
+model UserGuild {
+  id       Int      @id @default(autoincrement())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  guild    Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  guildId  Int
+  joinedAt DateTime @default(now())
+  role     GuildRole @default(MEMBER)
 
-  @@unique([userId, factionId])
+  @@unique([userId, guildId])
 }
 
 model Canvas {
@@ -96,17 +104,17 @@ model Canvas {
 }
 
 model Pixel {
-  id        Int      @id @default(autoincrement())
-  canvas    Canvas   @relation(fields: [canvasId], references: [id], onDelete: Cascade)
-  canvasId  Int
-  x         Int
-  y         Int
-  color     String
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId    String?
-  faction   Faction? @relation(fields: [factionId], references: [id], onDelete: SetNull)
-  factionId Int?
-  placedAt  DateTime @default(now())
+  id       Int      @id @default(autoincrement())
+  canvas   Canvas   @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  canvasId Int
+  x        Int
+  y        Int
+  color    String
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId   String?
+  guild    Guild?   @relation(fields: [guildId], references: [id], onDelete: SetNull)
+  guildId  Int?
+  placedAt DateTime @default(now())
 
   @@unique([canvasId, x, y])
 }
