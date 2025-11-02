@@ -20,23 +20,8 @@ export class GuildController {
     return this.guildService.createGuild(id, createGuildDto);
   }
 
-  @Get()
-  findAll() {
-    return this.guildService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.guildService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateGuildDto: UpdateGuildDto) {
-    return this.guildService.update(+id, updateGuildDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.guildService.remove(+id);
+  @Get('/:id')
+  guildByUserId(@Param('id') id: string) {
+    return this.guildService.getGuildByUserId(id);
   }
 }

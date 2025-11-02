@@ -92,6 +92,19 @@ export class GuildService {
     };
   }
 
+  async getGuildByUserId(userId: string) {
+    const membership = await this.prisma.userGuild.findFirst({
+      where: { userId },
+      select: { guildId: true },
+    });
+
+    if (!membership) {
+      return; // returning empty instead of throwing an error to let client tanstack know that it is a success fetch and will stop refetching
+    }
+
+    return this.getGuildWithMembers(membership.guildId);
+  }
+
   findAll() {
     return `This action returns all guild`;
   }
