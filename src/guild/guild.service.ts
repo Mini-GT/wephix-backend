@@ -1,11 +1,12 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateGuildDto } from './dto/create-guild.dto';
-import { UpdateGuildDto } from './dto/update-guild.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { createId } from '@paralleldrive/cuid2';
 
 @Injectable()
 export class GuildService {
@@ -105,19 +106,45 @@ export class GuildService {
     return this.getGuildWithMembers(membership.guildId);
   }
 
-  findAll() {
-    return `This action returns all guild`;
+  async getGuildInviteCode(guildId: number) {
+    const newInviteCode = createId();
+
+    await this.prisma.guild.update({
+      where: { id: guildId },
+      data: { inviteCode: newInviteCode },
+    });
+    return { inviteCode: newInviteCode };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} guild`;
-  }
+  async joinGuildByInvite(userId: string, inviteCode: string) {
+    const guild = await this.prisma.guild.findUnique({
+      where: { inviteCode },
+    });
 
-  update(id: number, updateGuildDto: UpdateGuildDto) {
-    return `This action updates a #${id} guild`;
-  }
+    if (!guild) throw new NotFoundException('Invalid invite code');
 
-  remove(id: number) {
-    return `This action removes a #${id} guild`;
+    // check if already joined
+    const alreadyMember = await this.prisma.userGuild.findUnique({
+      where: {
+        userId_guildId: {
+          userId,
+          guildId: guild.id,
+        },
+      },
+    });
+    console.log(alreadyMember);
+
+    if (alreadyMember) {
+      throw new ConflictException('User has already joined a guild');
+    }
+
+    await this.prisma.userGuild.create({
+      data: {
+        userId,
+        guildId: guild.id,
+      },
+    });
+
+    return this.getGuildWithMembers(guild.id);
   }
 }

@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { GuildService } from './guild.service';
 import { CreateGuildDto } from './dto/create-guild.dto';
@@ -23,5 +24,15 @@ export class GuildController {
   @Get('/:id')
   guildByUserId(@Param('id') id: string) {
     return this.guildService.getGuildByUserId(id);
+  }
+
+  @Get('/invite/:id')
+  getGuildInviteCode(@Param('id') id: string) {
+    return this.guildService.getGuildInviteCode(+id);
+  }
+
+  @Post('/join/:id/:code')
+  joinGuildByInvite(@Param('id') id: string, @Param('code') code: string) {
+    return this.guildService.joinGuildByInvite(id, code);
   }
 }
