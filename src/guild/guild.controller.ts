@@ -7,10 +7,12 @@ import {
   Param,
   Delete,
   Query,
+  Put,
 } from '@nestjs/common';
 import { GuildService } from './guild.service';
 import { CreateGuildDto } from './dto/create-guild.dto';
 import { UpdateGuildDto } from './dto/update-guild.dto';
+import { TransferLeadershipDto } from './dto/transfer-leadership-guild.dto';
 
 @Controller('api/v1/guild')
 export class GuildController {
@@ -48,5 +50,10 @@ export class GuildController {
     @Query('guildId') guildId: string,
   ) {
     return this.guildService.kickGuildMember(leaderId, memberId, +guildId);
+  }
+
+  @Patch('/transfer/leadership')
+  transferLeadership(@Body() transferLeadershipDto: TransferLeadershipDto) {
+    return this.guildService.transferLeadership(transferLeadershipDto);
   }
 }

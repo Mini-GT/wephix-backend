@@ -8,6 +8,8 @@ import {
 import { CreateGuildDto } from './dto/create-guild.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { createId } from '@paralleldrive/cuid2';
+import { UpdateGuildDto } from './dto/update-guild.dto';
+import { TransferLeadershipDto } from './dto/transfer-leadership-guild.dto';
 
 @Injectable()
 export class GuildService {
@@ -236,5 +238,49 @@ export class GuildService {
 
     // return the updated guild members
     return this.getGuildWithMembers(guildId);
+  }
+
+  async transferLeadership(transferLeadershipDto: TransferLeadershipDto) {
+    const { leaderId, newLeaderId, guildId } = transferLeadershipDto;
+
+    // check if guild exists
+    const guild = await this.prisma.guild.findUnique({
+      where: { id: +guildId },
+      include: { members: true },
+    });
+    if (!guild) throw new NotFoundException('Guild not found');
+    // check if requester is the leader
+    if (guild.guildLeaderId !== leaderId) {
+      throw new ForbiddenException(
+        'Only the current leader can transfer leadership',
+      );
+    }
+    // prevent leader from transferring to themselves
+    if (leaderId === newLeaderId) {
+      throw new BadRequestException('Cannot transfer leadership to yourself');
+    }
+    // check if target user is a member of the guild
+    const targetMember = await this.prisma.userGuild.findUnique({
+      where: { userId_guildId: { userId: newLeaderId, guildId: +guildId } },
+    });
+    if (!targetMember) {
+      throw new NotFoundException('Target user is not a member of this guild');
+    }
+    // update guild leader
+    await this.prisma.guild.update({
+      where: { id: +guildId },
+      data: { guildLeaderId: newLeaderId },
+    });
+    // if role transfer is successfull, update roles
+    await this.prisma.userGuild.update({
+      where: { userId_guildId: { userId: leaderId, guildId: +guildId } },
+      data: { role: 'MEMBER' }, // change current leader role to member
+    });
+    await this.prisma.userGuild.update({
+      where: { userId_guildId: { userId: newLeaderId, guildId: +guildId } },
+      data: { role: 'LEADER' }, // change selected member to be the new leader
+    });
+
+    return this.getGuildWithMembers(+guildId);
   }
 }
