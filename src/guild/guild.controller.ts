@@ -35,4 +35,9 @@ export class GuildController {
   joinGuildByInvite(@Param('id') id: string, @Param('code') code: string) {
     return this.guildService.joinGuildByInvite(id, code);
   }
+
+  @Delete('/leave/:id')
+  leaveGuild(@Param('id') id: string, @Query('guildId') guildId: string) {
+    return this.guildService.leaveGuild(id, +guildId);
+  }
 }
