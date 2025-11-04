@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -24,6 +25,7 @@ export class GuildService {
     const newGuild = await this.prisma.guild.create({
       data: {
         name: createGuildDto.guildName,
+        guildLeaderId: userId,
         members: {
           create: {
             userId,
@@ -46,6 +48,7 @@ export class GuildService {
         name: true,
         description: true,
         createdAt: true,
+        guildLeaderId: true,
         members: {
           orderBy: {
             user: {
@@ -89,6 +92,7 @@ export class GuildService {
       description: guild.description,
       createdAt: guild.createdAt,
       totalPixelsPlaced,
+      guildLeaderId: guild.guildLeaderId,
       members,
     };
   }
@@ -123,18 +127,23 @@ export class GuildService {
 
     if (!guild) throw new NotFoundException('Invalid invite code');
 
-    // check if already joined
-    const alreadyMember = await this.prisma.userGuild.findUnique({
-      where: {
-        userId_guildId: {
-          userId,
-          guildId: guild.id,
-        },
-      },
+    // check if the user already belongs to a guild
+    const currentMembership = await this.prisma.userGuild.findFirst({
+      where: { userId },
+      include: { guild: true },
     });
 
-    if (alreadyMember) {
-      throw new ConflictException('User has already joined a guild');
+    if (currentMembership) {
+      // if user already belongs to a guild
+      if (currentMembership.guildId === guild.id) {
+        // if same guild, no need to rejoin
+        throw new ConflictException('You are already a member of this guild.');
+      } else {
+        // if different guild, it must leave before joining a new one
+        throw new BadRequestException(
+          `You are already in a guild. You must leave before joining another.`,
+        );
+      }
     }
 
     await this.prisma.userGuild.create({
@@ -193,5 +202,39 @@ export class GuildService {
     }
 
     return 'You have left the guild.';
+  }
+
+  async kickGuildMember(leaderId: string, memberId: string, guildId: number) {
+    const guild = await this.prisma.guild.findUnique({
+      where: { id: guildId },
+      include: { members: true },
+    });
+
+    if (!guild) throw new NotFoundException('Guild not found');
+
+    // check if requester is the leader
+    if (guild.guildLeaderId !== leaderId) {
+      throw new ForbiddenException('Only the guild leader can kick members');
+    }
+
+    // leader should not be able to kick itself
+    if (leaderId === memberId) {
+      throw new BadRequestException('Leader cannot kick themselves');
+    }
+
+    // check if target is in the guild
+    const member = await this.prisma.userGuild.findUnique({
+      where: { userId_guildId: { userId: memberId, guildId } },
+    });
+
+    if (!member) throw new NotFoundException('User is not in this guild');
+
+    // remove the member
+    await this.prisma.userGuild.delete({
+      where: { userId_guildId: { userId: memberId, guildId } },
+    });
+
+    // return the updated guild members
+    return this.getGuildWithMembers(guildId);
   }
 }

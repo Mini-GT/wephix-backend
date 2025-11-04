@@ -40,4 +40,13 @@ export class GuildController {
   leaveGuild(@Param('id') id: string, @Query('guildId') guildId: string) {
     return this.guildService.leaveGuild(id, +guildId);
   }
+
+  @Delete('/kick')
+  kickGuildMember(
+    @Query('leaderId') leaderId: string,
+    @Query('memberId') memberId: string,
+    @Query('guildId') guildId: string,
+  ) {
+    return this.guildService.kickGuildMember(leaderId, memberId, +guildId);
+  }
 }
