@@ -71,24 +71,25 @@ model Discord {
 }
 
 model Guild {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  createdAt DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  createdAt   DateTime @default(now())
   description String?
-  inviteCode   String      @unique @default(cuid())
-  isOpen       Boolean     @default(false) 
+  inviteCode  String   @unique @default(cuid())
+  isOpen      Boolean  @default(false)
+  isDeleted   Boolean  @default(false)
 
   members UserGuild[]
   pixels  Pixel[]
 }
 
 model UserGuild {
-  id       Int      @id @default(autoincrement())
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       Int       @id @default(autoincrement())
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId   String
-  guild    Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  guild    Guild     @relation(fields: [guildId], references: [id], onDelete: Cascade)
   guildId  Int
-  joinedAt DateTime @default(now())
+  joinedAt DateTime  @default(now())
   role     GuildRole @default(MEMBER)
 
   @@unique([userId, guildId])
