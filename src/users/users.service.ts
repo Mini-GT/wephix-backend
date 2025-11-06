@@ -4,9 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
-import calculateCharges from '../utils/calculateCharges';
 import { PrismaService } from '../prisma/prisma.service';
 import bcrypt from 'bcryptjs';
+import { calculateCharges } from '../utils/calculateCharges';
 
 @Injectable()
 export class UsersService {
@@ -25,22 +25,10 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const { charges, cooldownUntil } = calculateCharges({
-      charges: userPaintCharges.charges,
-      cooldownUntil: userPaintCharges.cooldownUntil,
-    });
-
-    if (
-      charges !== userPaintCharges.charges ||
-      cooldownUntil !== userPaintCharges.cooldownUntil
-    ) {
-      await this.prisma.user.update({
-        where: { id },
-        data: { charges, cooldownUntil },
-      });
-
-      userPaintCharges = { charges, cooldownUntil };
-    }
+    const { charges, cooldownUntil } = calculateCharges(
+      userPaintCharges.charges,
+      userPaintCharges.cooldownUntil,
+    );
 
     return { charges, cooldownUntil };
   }

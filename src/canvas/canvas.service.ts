@@ -6,15 +6,14 @@ import {
 } from '@nestjs/common';
 import { CreateCanvasDto } from './dto/create-canvas.dto';
 import { UpdateCanvasDto } from './dto/update-canvas.dto';
-import calculateCharges from '../utils/calculateCharges';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventsGateway } from '../events/events.gateway';
 import { InspectCanvasDto } from './dto/inspect-canvas.dto';
 import { startOfDay } from 'date-fns';
+import { calculateCharges } from '../utils/calculateCharges';
 
 @Injectable()
 export class CanvasService {
-  private maxPaintCharges: 30;
   constructor(
     private prisma: PrismaService,
     private socket: EventsGateway,
@@ -134,7 +133,11 @@ export class CanvasService {
     if (!user) throw new NotFoundException('User not found');
 
     // get user charges and cooldown
-    const { charges, cooldownUntil } = calculateCharges(user);
+    const { charges, cooldownUntil } = calculateCharges(
+      user.charges,
+      user.cooldownUntil,
+    );
+
     if (charges <= 0) {
       throw new ForbiddenException('No charges left!');
     }
@@ -163,11 +166,7 @@ export class CanvasService {
     });
 
     const newCharges = charges - 1;
-    const RECHARGE_TIME = 30 * 1000;
-    const newCooldown =
-      charges === this.maxPaintCharges // if they spent from full
-        ? new Date(Date.now() + RECHARGE_TIME)
-        : cooldownUntil;
+    const newCooldown = cooldownUntil || new Date();
 
     // update user pixel data
     await this.prisma.user.update({
@@ -196,7 +195,11 @@ export class CanvasService {
     // this.socket.server.broadcast.emit('pixel', {});
     this.socket.handleUpdatedPixel(pixel);
 
-    return 'Canvas updated successfully';
+    return {
+      message: 'Canvas updated successfully',
+      charges: newCharges,
+      cooldownUntil: newCooldown,
+    };
   }
 
   async inspectCanvasCell(canvasId: number, inspectDto: InspectCanvasDto) {
@@ -221,7 +224,7 @@ export class CanvasService {
             },
           },
         },
-        faction: {
+        guild: {
           select: {
             name: true,
           },
