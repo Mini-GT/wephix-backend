@@ -1,37 +1,31 @@
 export function calculateCharges(charges: number, cooldownUntil: Date | null) {
   const MAX_CHARGES = 30;
   const RECHARGE_TIME_MS = 30_000;
-  const now = new Date();
+  const now = Date.now();
 
+  // if already full
   if (charges >= MAX_CHARGES) {
     return { charges: MAX_CHARGES, cooldownUntil: null };
   }
 
+  // if no cooldown, full as well
   if (!cooldownUntil) {
     return { charges: MAX_CHARGES, cooldownUntil: null };
   }
 
-  const regenStartTime = new Date(cooldownUntil);
-  const elapsed = now.getTime() - regenStartTime.getTime();
+  const cooldownEnd = new Date(cooldownUntil).getTime();
 
-  if (elapsed < 0) {
-    // cooldown is in the future
-    return { charges, cooldownUntil };
+  // if still in cooldown period → not done yet
+  if (cooldownEnd > now) {
+    const remainingMs = cooldownEnd - now;
+    const totalMissing = Math.ceil(remainingMs / RECHARGE_TIME_MS);
+    const newCharges = MAX_CHARGES - totalMissing;
+    return {
+      charges: Math.max(newCharges, 0),
+      cooldownUntil,
+    };
   }
 
-  const chargesRegained = Math.floor(elapsed / RECHARGE_TIME_MS);
-
-  if (chargesRegained === 0) {
-    return { charges, cooldownUntil };
-  }
-
-  const newCharges = Math.min(charges + chargesRegained, MAX_CHARGES);
-
-  if (newCharges >= MAX_CHARGES) {
-    return { charges: MAX_CHARGES, cooldownUntil: null };
-  }
-
-  // the cooldown should stay at the original regen start time
-  // we just update the charges count
-  return { charges: newCharges, cooldownUntil };
+  // cooldown passed that means its fully recharged
+  return { charges: MAX_CHARGES, cooldownUntil: null };
 }

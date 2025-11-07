@@ -6,7 +6,7 @@ import {
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import bcrypt from 'bcryptjs';
-import { calculateCharges } from '../utils/calculateCharges';
+import { calculateCharges } from 'src/utils/calculateCharges';
 
 @Injectable()
 export class UsersService {

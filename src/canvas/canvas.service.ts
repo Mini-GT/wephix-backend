@@ -10,7 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EventsGateway } from '../events/events.gateway';
 import { InspectCanvasDto } from './dto/inspect-canvas.dto';
 import { startOfDay } from 'date-fns';
-import { calculateCharges } from '../utils/calculateCharges';
+import { calculateCharges } from 'src/utils/calculateCharges';
 
 @Injectable()
 export class CanvasService {
@@ -166,7 +166,23 @@ export class CanvasService {
     });
 
     const newCharges = charges - 1;
-    const newCooldown = cooldownUntil || new Date();
+
+    // FIXED: Calculate remaining time + add 30 seconds for new paint
+    const RECHARGE_TIME_MS = 30_000;
+    const MAX_CHARGES = 30;
+    let newCooldown: Date;
+
+    if (!cooldownUntil) {
+      // First time going below max - just add 30 seconds
+      newCooldown = new Date(now.getTime() + RECHARGE_TIME_MS);
+    } else {
+      // Calculate remaining time on existing cooldown
+      const cooldownTime = new Date(cooldownUntil).getTime();
+      const remainingTime = Math.max(0, cooldownTime - now.getTime());
+
+      // New cooldown = remaining time + 30 seconds for this new paint
+      newCooldown = new Date(now.getTime() + remainingTime + RECHARGE_TIME_MS);
+    }
 
     // update user pixel data
     await this.prisma.user.update({
@@ -192,7 +208,6 @@ export class CanvasService {
       userId: user.id,
     };
 
-    // this.socket.server.broadcast.emit('pixel', {});
     this.socket.handleUpdatedPixel(pixel);
 
     return {
