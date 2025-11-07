@@ -63,6 +63,11 @@ export class GuildService {
                 id: true,
                 name: true,
                 totalPixelsPlaced: true,
+                discord: {
+                  select: {
+                    username: true,
+                  },
+                },
               },
             },
             role: true,
@@ -80,6 +85,7 @@ export class GuildService {
       name: m.user.name,
       totalPixelsPlaced: m.user.totalPixelsPlaced,
       role: m.role,
+      discord: m.user.discord,
     }));
 
     // calculate total pixels of the guild
