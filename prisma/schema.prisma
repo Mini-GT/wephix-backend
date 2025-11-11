@@ -48,10 +48,9 @@ model User {
   forgotPassTokenExpiry  DateTime?
   forgotPassVerifyToken  String?
 
-  // pixel related
-  totalPixelsPlaced Int       @default(0)
-  charges           Int       @default(30) // how many uses left
-  cooldownUntil     DateTime? // when next charge regenerates
+  totalPixelsPlaced Int      @default(0)
+  charges           Int      @default(30) // how many uses left
+  cooldownUntil     DateTime?
 
   // Relations
   guildLinks UserGuild[]
@@ -71,13 +70,14 @@ model Discord {
 }
 
 model Guild {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  createdAt   DateTime @default(now())
-  description String?
-  inviteCode  String   @unique @default(cuid())
-  isOpen      Boolean  @default(false)
-  isDeleted   Boolean  @default(false)
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  createdAt     DateTime @default(now())
+  description   String?
+  inviteCode    String   @unique @default(cuid())
+  isOpen        Boolean  @default(false)
+  isDeleted     Boolean  @default(false)
+  guildLeaderId String?
 
   members UserGuild[]
   pixels  Pixel[]
