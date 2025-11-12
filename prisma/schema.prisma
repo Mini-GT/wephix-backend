@@ -48,8 +48,8 @@ model User {
   forgotPassTokenExpiry  DateTime?
   forgotPassVerifyToken  String?
 
-  totalPixelsPlaced Int      @default(0)
-  charges           Int      @default(30) // how many uses left
+  totalPixelsPlaced Int       @default(0)
+  charges           Int       @default(30) // how many uses left
   cooldownUntil     DateTime?
 
   // Relations
@@ -57,6 +57,7 @@ model User {
   pixels     Pixel[]
   discord    Discord?
   pixelStats PixelStats[]
+  reports    Reports[]
 }
 
 model Discord {
@@ -128,4 +129,14 @@ model PixelStats {
   count  Int      @default(0)
 
   @@unique([userId, date])
+}
+
+model Reports {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  category  String?
+  message   String?
+  subject   String?
+  createdAt DateTime @default(now())
 }
