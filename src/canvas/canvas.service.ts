@@ -155,6 +155,7 @@ export class CanvasService {
         userId: updateCanvasDto.userId,
         x: updateCanvasDto.x,
         y: updateCanvasDto.y,
+        placedAt: now,
       },
       create: {
         canvasId,
@@ -162,6 +163,7 @@ export class CanvasService {
         y: updateCanvasDto.y,
         color: updateCanvasDto.color,
         userId: updateCanvasDto.userId,
+        placedAt: now,
       },
     });
 
@@ -169,7 +171,6 @@ export class CanvasService {
 
     // FIXED: Calculate remaining time + add 30 seconds for new paint
     const RECHARGE_TIME_MS = 30_000;
-    const MAX_CHARGES = 30;
     let newCooldown: Date;
 
     if (!cooldownUntil) {
@@ -229,6 +230,7 @@ export class CanvasService {
       select: {
         x: true,
         y: true,
+        color: true,
         user: {
           select: {
             name: true,
