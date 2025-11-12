@@ -7,6 +7,10 @@ import { ConfigModule } from '@nestjs/config';
 import { CanvasModule } from './canvas/canvas.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { EventsModule } from './events/events.module';
+import { GuildModule } from './guild/guild.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -14,11 +18,15 @@ import { PrismaModule } from './prisma/prisma.module';
       isGlobal: true,
       envFilePath: '.env.development',
     }),
+    ScheduleModule.forRoot(),
     UsersModule,
     AuthModule,
     CanvasModule,
     LeaderboardModule,
     PrismaModule,
+    EventsModule,
+    GuildModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
