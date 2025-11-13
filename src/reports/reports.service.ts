@@ -29,9 +29,9 @@ export class ReportsService {
       },
     });
 
-    if (reportsCount >= 5) {
+    if (reportsCount >= 3) {
       throw new BadRequestException(
-        'You can only submit up to 5 reports every 24 hours.',
+        'You can only submit up to 3 reports every 24 hours.',
       );
     }
 
