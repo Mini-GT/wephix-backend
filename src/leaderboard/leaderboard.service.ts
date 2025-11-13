@@ -1,16 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateLeaderboardDto } from './dto/create-leaderboard.dto';
-import { UpdateLeaderboardDto } from './dto/update-leaderboard.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { endOfDay, startOfDay, startOfMonth, startOfWeek } from 'date-fns';
 
 @Injectable()
 export class LeaderboardService {
   constructor(private prisma: PrismaService) {}
-
-  create(createLeaderboardDto: CreateLeaderboardDto) {
-    return 'This action adds a new leaderboard';
-  }
 
   async findAll() {
     const today = startOfDay(new Date());
@@ -22,10 +16,13 @@ export class LeaderboardService {
         id: true,
         name: true,
         totalPixelsPlaced: true,
+        profileImage: true,
         discord: {
           select: {
+            discordId: true,
             global_name: true,
             username: true,
+            avatar: true,
           },
         },
       },
@@ -56,10 +53,13 @@ export class LeaderboardService {
       select: {
         id: true,
         name: true,
+        profileImage: true,
         discord: {
           select: {
+            discordId: true,
             username: true,
             global_name: true,
+            avatar: true,
           },
         },
       },
@@ -70,9 +70,12 @@ export class LeaderboardService {
       return {
         id: user?.id,
         name: user?.name,
+        profileImage: user?.profileImage,
         discord: {
+          discordId: user?.discord?.discordId,
           username: user?.discord?.username,
           globalName: user?.discord?.global_name,
+          avatar: user?.discord?.avatar,
         },
         totalPixelsPlaced: d._sum.count ?? 0,
       };
@@ -94,10 +97,13 @@ export class LeaderboardService {
       select: {
         id: true,
         name: true,
+        profileImage: true,
         discord: {
           select: {
+            discordId: true,
             username: true,
             global_name: true,
+            avatar: true,
           },
         },
       },
@@ -108,9 +114,12 @@ export class LeaderboardService {
       return {
         id: user?.id,
         name: user?.name,
+        profileImage: user?.profileImage,
         discord: {
+          discordId: user?.discord?.discordId,
           username: user?.discord?.username,
           globalName: user?.discord?.global_name,
+          avatar: user?.discord?.avatar,
         },
         totalPixelsPlaced: w._sum.count ?? 0,
       };
@@ -132,10 +141,13 @@ export class LeaderboardService {
       select: {
         id: true,
         name: true,
+        profileImage: true,
         discord: {
           select: {
+            discordId: true,
             username: true,
             global_name: true,
+            avatar: true,
           },
         },
       },
@@ -146,9 +158,12 @@ export class LeaderboardService {
       return {
         id: user?.id,
         name: user?.name,
+        profileImage: user?.profileImage,
         discord: {
+          discordId: user?.discord?.discordId,
           username: user?.discord?.username,
           globalName: user?.discord?.global_name,
+          avatar: user?.discord?.avatar,
         },
         totalPixelsPlaced: m._sum.count ?? 0,
       };
@@ -158,9 +173,12 @@ export class LeaderboardService {
       allTime: allTime.map((u) => ({
         id: u.id,
         name: u.name,
+        profileImage: u.profileImage,
         discord: {
+          discordId: u.discord?.discordId,
           username: u.discord?.username,
           globalName: u.discord?.global_name,
+          avatar: u.discord?.avatar,
         },
         totalPixelsPlaced: u.totalPixelsPlaced,
       })),
@@ -174,17 +192,5 @@ export class LeaderboardService {
     }
 
     return { ...users };
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} leaderboard`;
-  }
-
-  update(id: number, updateLeaderboardDto: UpdateLeaderboardDto) {
-    return `This action updates a #${id} leaderboard`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} leaderboard`;
   }
 }
