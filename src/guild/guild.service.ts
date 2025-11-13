@@ -63,6 +63,7 @@ export class GuildService {
                 id: true,
                 name: true,
                 totalPixelsPlaced: true,
+                profileImage: true,
                 discord: {
                   select: {
                     username: true,
@@ -84,6 +85,7 @@ export class GuildService {
       id: m.user.id,
       name: m.user.name,
       totalPixelsPlaced: m.user.totalPixelsPlaced,
+      profileImage: m.user.profileImage,
       role: m.role,
       discord: m.user.discord,
     }));
