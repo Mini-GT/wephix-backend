@@ -169,19 +169,20 @@ export class CanvasService {
 
     const newCharges = charges - 1;
 
-    // FIXED: Calculate remaining time + add 30 seconds for new paint
+    // FIXED: calculate remaining time + add 30 seconds for new paint
     const RECHARGE_TIME_MS = 30_000;
     let newCooldown: Date;
 
     if (!cooldownUntil) {
-      // First time going below max - just add 30 seconds
+      // if first time no cooldown (means everythiging is full), take current date and add 30 seconds
       newCooldown = new Date(now.getTime() + RECHARGE_TIME_MS);
     } else {
-      // Calculate remaining time on existing cooldown
+      // if there is a cooldown (a valid cooldown)
+      // calculate remaining time on existing cooldown
       const cooldownTime = new Date(cooldownUntil).getTime();
       const remainingTime = Math.max(0, cooldownTime - now.getTime());
 
-      // New cooldown = remaining time + 30 seconds for this new paint
+      // new cooldown = remaining time + 30 seconds for this new paint
       newCooldown = new Date(now.getTime() + remainingTime + RECHARGE_TIME_MS);
     }
 
@@ -255,9 +256,5 @@ export class CanvasService {
     }
 
     return pixelData;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} canva`;
   }
 }

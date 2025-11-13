@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
 import { CanvasService } from './canvas.service';
 import { CreateCanvasDto } from './dto/create-canvas.dto';
 import { UpdateCanvasDto } from './dto/update-canvas.dto';
@@ -40,10 +32,5 @@ export class CanvasController {
     @Body() updateCanvasDto: UpdateCanvasDto,
   ) {
     return this.canvasService.updateCanvasPixel(+canvasId, updateCanvasDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.canvasService.remove(+id);
   }
 }
