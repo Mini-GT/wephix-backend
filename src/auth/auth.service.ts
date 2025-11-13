@@ -27,6 +27,7 @@ export class AuthService {
     }
 
     const { name, email, password } = createAuthDto;
+
     const existingUser = await this.prisma.user.findUnique({
       where: {
         email,
@@ -144,7 +145,7 @@ export class AuthService {
       return { token };
     }
 
-    // if no discord user, find user with the same email
+    // if no discord user with id, find user with the same email
     let user = await this.prisma.user.findUnique({ where: { email } });
 
     // if user found with same email, link discord to that user
@@ -179,17 +180,5 @@ export class AuthService {
 
     const token = signJwt({ id: user.id }, JWTSECRET, { expiresIn: '7d' });
     return { token };
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
   }
 }
