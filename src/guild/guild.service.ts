@@ -256,39 +256,76 @@ export class GuildService {
       where: { id: +guildId },
       include: { members: true },
     });
+
     if (!guild) throw new NotFoundException('Guild not found');
+
     // check if requester is the leader
     if (guild.guildLeaderId !== leaderId) {
       throw new ForbiddenException(
         'Only the current leader can transfer leadership',
       );
     }
+
     // prevent leader from transferring to themselves
     if (leaderId === newLeaderId) {
       throw new BadRequestException('Cannot transfer leadership to yourself');
     }
+
     // check if target user is a member of the guild
     const targetMember = await this.prisma.userGuild.findUnique({
       where: { userId_guildId: { userId: newLeaderId, guildId: +guildId } },
     });
+
     if (!targetMember) {
       throw new NotFoundException('Target user is not a member of this guild');
     }
+
     // update guild leader
     await this.prisma.guild.update({
       where: { id: +guildId },
       data: { guildLeaderId: newLeaderId },
     });
+
     // if role transfer is successfull, update roles
     await this.prisma.userGuild.update({
       where: { userId_guildId: { userId: leaderId, guildId: +guildId } },
       data: { role: 'MEMBER' }, // change current leader role to member
     });
+
     await this.prisma.userGuild.update({
       where: { userId_guildId: { userId: newLeaderId, guildId: +guildId } },
       data: { role: 'LEADER' }, // change selected member to be the new leader
     });
 
     return this.getGuildWithMembers(+guildId);
+  }
+
+  async updateGuildDescription(updateGuildDto: UpdateGuildDto) {
+    const { leaderId, guildId, description } = updateGuildDto;
+
+    const guild = await this.prisma.guild.findUnique({
+      where: { id: +guildId },
+      include: { members: true },
+    });
+
+    if (!guild) throw new NotFoundException('Guild not found');
+
+    // check if requester is the leader
+    if (guild.guildLeaderId !== leaderId) {
+      throw new ForbiddenException(
+        'Only the current leader can edit the description',
+      );
+    }
+
+    // update guild
+    const newDescription = await this.prisma.guild.update({
+      where: { id: +guildId },
+      data: { description },
+      select: {
+        description: true,
+      },
+    });
+
+    return newDescription;
   }
 }

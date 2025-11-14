@@ -56,4 +56,9 @@ export class GuildController {
   transferLeadership(@Body() transferLeadershipDto: TransferLeadershipDto) {
     return this.guildService.transferLeadership(transferLeadershipDto);
   }
+
+  @Patch('/description')
+  updateGuildDescription(@Body() updateGuildDto: UpdateGuildDto) {
+    return this.guildService.updateGuildDescription(updateGuildDto);
+  }
 }
