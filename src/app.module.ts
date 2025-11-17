@@ -1,4 +1,9 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -11,6 +16,10 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { EventsModule } from './events/events.module';
 import { GuildModule } from './guild/guild.module';
 import { ReportsModule } from './reports/reports.module';
+import { AuthMiddleware } from './middleware/auth.middleware';
+import { CanvasController } from './canvas/canvas.controller';
+import { GuildController } from './guild/guild.controller';
+import { ReportsController } from './reports/reports.controller';
 
 @Module({
   imports: [
@@ -31,4 +40,18 @@ import { ReportsModule } from './reports/reports.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AuthMiddleware)
+      .exclude(
+        { path: 'api/v1/canvas/inspect/{*splat}', method: RequestMethod.POST },
+        { path: 'api/v1/canvas/{*splat}', method: RequestMethod.GET },
+      )
+      .forRoutes(CanvasController);
+
+    consumer
+      .apply(AuthMiddleware)
+      .forRoutes(GuildController, ReportsController);
+  }
+}

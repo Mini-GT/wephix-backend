@@ -1,4 +1,3 @@
-import { User } from '@repo/types';
 import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class UpdateCanvasDto {
@@ -11,7 +10,4 @@ export class UpdateCanvasDto {
   @IsString()
   @IsNotEmpty()
   color: string;
-  @IsString()
-  @IsNotEmpty()
-  userId: User['id'];
 }

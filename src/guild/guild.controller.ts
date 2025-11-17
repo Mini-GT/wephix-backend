@@ -7,25 +7,29 @@ import {
   Param,
   Delete,
   Query,
-  Put,
+  Req,
 } from '@nestjs/common';
 import { GuildService } from './guild.service';
 import { CreateGuildDto } from './dto/create-guild.dto';
 import { UpdateGuildDto } from './dto/update-guild.dto';
 import { TransferLeadershipDto } from './dto/transfer-leadership-guild.dto';
+import { type AuthenticatedRequest } from '../types/express';
 
 @Controller('api/v1/guild')
 export class GuildController {
   constructor(private readonly guildService: GuildService) {}
 
-  @Post('/create/:id')
-  createGuild(@Param('id') id: string, @Body() createGuildDto: CreateGuildDto) {
-    return this.guildService.createGuild(id, createGuildDto);
+  @Post('/create')
+  createGuild(
+    @Req() req: AuthenticatedRequest,
+    @Body() createGuildDto: CreateGuildDto,
+  ) {
+    return this.guildService.createGuild(req.userId, createGuildDto);
   }
 
-  @Get('/:id')
-  guildByUserId(@Param('id') id: string) {
-    return this.guildService.getGuildByUserId(id);
+  @Get('/')
+  guildByUserId(@Req() req: AuthenticatedRequest) {
+    return this.guildService.getGuildByUserId(req.userId);
   }
 
   @Get('/invite/:id')
@@ -33,32 +37,50 @@ export class GuildController {
     return this.guildService.getGuildInviteCode(+id);
   }
 
-  @Post('/join/:id/:code')
-  joinGuildByInvite(@Param('id') id: string, @Param('code') code: string) {
-    return this.guildService.joinGuildByInvite(id, code);
+  @Post('/join/:code')
+  joinGuildByInvite(
+    @Req() req: AuthenticatedRequest,
+    @Param('code') code: string,
+  ) {
+    return this.guildService.joinGuildByInvite(req.userId, code);
   }
 
-  @Delete('/leave/:id')
-  leaveGuild(@Param('id') id: string, @Query('guildId') guildId: string) {
-    return this.guildService.leaveGuild(id, +guildId);
+  @Delete('/leave')
+  leaveGuild(
+    @Req() req: AuthenticatedRequest,
+    @Query('guildId') guildId: string,
+  ) {
+    return this.guildService.leaveGuild(req.userId, +guildId);
   }
 
   @Delete('/kick')
   kickGuildMember(
-    @Query('leaderId') leaderId: string,
+    @Req() req: AuthenticatedRequest,
     @Query('memberId') memberId: string,
     @Query('guildId') guildId: string,
   ) {
+    const leaderId = req.userId;
     return this.guildService.kickGuildMember(leaderId, memberId, +guildId);
   }
 
   @Patch('/transfer/leadership')
-  transferLeadership(@Body() transferLeadershipDto: TransferLeadershipDto) {
-    return this.guildService.transferLeadership(transferLeadershipDto);
+  transferLeadership(
+    @Req() req: AuthenticatedRequest,
+    @Body() transferLeadershipDto: TransferLeadershipDto,
+  ) {
+    const leaderId = req.userId;
+    return this.guildService.transferLeadership(
+      leaderId,
+      transferLeadershipDto,
+    );
   }
 
   @Patch('/description')
-  updateGuildDescription(@Body() updateGuildDto: UpdateGuildDto) {
-    return this.guildService.updateGuildDescription(updateGuildDto);
+  updateGuildDescription(
+    @Req() req: AuthenticatedRequest,
+    @Body() updateGuildDto: UpdateGuildDto,
+  ) {
+    const leaderId = req.userId;
+    return this.guildService.updateGuildDescription(leaderId, updateGuildDto);
   }
 }

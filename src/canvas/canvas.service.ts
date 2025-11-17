@@ -100,7 +100,11 @@ export class CanvasService {
     return { ...canvas };
   }
 
-  async updateCanvasPixel(canvasId: number, updateCanvasDto: UpdateCanvasDto) {
+  async updateCanvasPixel(
+    canvasId: number,
+    userId: string,
+    updateCanvasDto: UpdateCanvasDto,
+  ) {
     const now = new Date();
     const today = startOfDay(now);
 
@@ -126,7 +130,7 @@ export class CanvasService {
     }
 
     let user = await this.prisma.user.findUnique({
-      where: { id: updateCanvasDto.userId },
+      where: { id: userId },
       select: { id: true, charges: true, cooldownUntil: true, name: true },
     });
 
@@ -152,7 +156,7 @@ export class CanvasService {
       },
       update: {
         color: updateCanvasDto.color,
-        userId: updateCanvasDto.userId,
+        userId,
         x: updateCanvasDto.x,
         y: updateCanvasDto.y,
         placedAt: now,
@@ -162,7 +166,7 @@ export class CanvasService {
         x: updateCanvasDto.x,
         y: updateCanvasDto.y,
         color: updateCanvasDto.color,
-        userId: updateCanvasDto.userId,
+        userId,
         placedAt: now,
       },
     });
@@ -198,9 +202,9 @@ export class CanvasService {
 
     // update user daily stats
     await this.prisma.pixelStats.upsert({
-      where: { userId_date: { userId: updateCanvasDto.userId, date: today } },
+      where: { userId_date: { userId, date: today } },
       update: { count: { increment: 1 } },
-      create: { userId: updateCanvasDto.userId, date: today, count: 1 },
+      create: { userId, date: today, count: 1 },
     });
 
     const pixel = {

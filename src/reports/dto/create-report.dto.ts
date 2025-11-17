@@ -1,9 +1,6 @@
 import { IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 
 export class CreateReportDto {
-  @IsNotEmpty({ message: 'Something went wrong' })
-  userId: string;
-
   @IsNotEmpty()
   category: string;
 

@@ -10,8 +10,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createReportDto: CreateReportDto) {
-    const { userId, ...rest } = createReportDto;
+  async create(userId: string, createReportDto: CreateReportDto) {
+    const { ...rest } = createReportDto;
 
     // get reports from the last 24 hours
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);

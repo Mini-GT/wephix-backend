@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Req } from '@nestjs/common';
 import { CanvasService } from './canvas.service';
 import { CreateCanvasDto } from './dto/create-canvas.dto';
 import { UpdateCanvasDto } from './dto/update-canvas.dto';
 import { InspectCanvasDto } from './dto/inspect-canvas.dto';
+import { type AuthenticatedRequest } from '../types/express';
 
 @Controller('api/v1/canvas')
 export class CanvasController {
@@ -30,7 +31,12 @@ export class CanvasController {
   updateCanvasPixel(
     @Param('canvasId') canvasId: string,
     @Body() updateCanvasDto: UpdateCanvasDto,
+    @Req() req: AuthenticatedRequest,
   ) {
-    return this.canvasService.updateCanvasPixel(+canvasId, updateCanvasDto);
+    return this.canvasService.updateCanvasPixel(
+      +canvasId,
+      req.userId,
+      updateCanvasDto,
+    );
   }
 }

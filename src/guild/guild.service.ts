@@ -42,7 +42,7 @@ export class GuildService {
     return guild;
   }
 
-  async getGuildWithMembers(guildId: number) {
+  private async getGuildWithMembers(guildId: number) {
     const guild = await this.prisma.guild.findUnique({
       where: { id: guildId },
       select: {
@@ -248,8 +248,11 @@ export class GuildService {
     return this.getGuildWithMembers(guildId);
   }
 
-  async transferLeadership(transferLeadershipDto: TransferLeadershipDto) {
-    const { leaderId, newLeaderId, guildId } = transferLeadershipDto;
+  async transferLeadership(
+    leaderId: string,
+    transferLeadershipDto: TransferLeadershipDto,
+  ) {
+    const { newLeaderId, guildId } = transferLeadershipDto;
 
     // check if guild exists
     const guild = await this.prisma.guild.findUnique({
@@ -300,8 +303,11 @@ export class GuildService {
     return this.getGuildWithMembers(+guildId);
   }
 
-  async updateGuildDescription(updateGuildDto: UpdateGuildDto) {
-    const { leaderId, guildId, description } = updateGuildDto;
+  async updateGuildDescription(
+    leaderId: string,
+    updateGuildDto: UpdateGuildDto,
+  ) {
+    const { guildId, description } = updateGuildDto;
 
     const guild = await this.prisma.guild.findUnique({
       where: { id: +guildId },
