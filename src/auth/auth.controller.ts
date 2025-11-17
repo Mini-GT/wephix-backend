@@ -51,7 +51,7 @@ export class AuthController {
   }
 
   @Get('discord')
-  @Redirect('http://localhost:5000/login')
+  @Redirect(`${process.env.clientUrl}/login`)
   async oauth2(
     @Res({ passthrough: true }) res: Response,
     @Query('code') code: string,
