@@ -20,6 +20,7 @@ import { AuthMiddleware } from './middleware/auth.middleware';
 import { CanvasController } from './canvas/canvas.controller';
 import { GuildController } from './guild/guild.controller';
 import { ReportsController } from './reports/reports.controller';
+import { UsersController } from './users/users.controller';
 
 @Module({
   imports: [
@@ -52,6 +53,6 @@ export class AppModule implements NestModule {
 
     consumer
       .apply(AuthMiddleware)
-      .forRoutes(GuildController, ReportsController);
+      .forRoutes(GuildController, ReportsController, UsersController);
   }
 }

@@ -1,37 +1,33 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Body, Patch, Delete, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { type AuthenticatedRequest } from '../types/express';
 
 @Controller('api/v1/users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get('/paint-charges/:id')
-  getPaintCharges(@Param('id') id: string) {
-    return this.usersService.getPaintCharges(id);
+  @Get('/paint-charges')
+  getPaintCharges(@Req() req: AuthenticatedRequest) {
+    return this.usersService.getPaintCharges(req.userId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.getUserById(id);
+  @Get()
+  findOne(@Req() req: AuthenticatedRequest) {
+    return this.usersService.getUserById(req.userId);
   }
 
-  @Patch('/profile/update/:id')
-  updateProfile(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  @Patch('/profile/update')
+  updateProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(req.userId, updateUserDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @Delete()
+  remove(@Req() req: AuthenticatedRequest) {
+    return this.usersService.remove(+req.userId);
   }
 }
