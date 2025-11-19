@@ -1,4 +1,12 @@
-import { Controller, Get, Body, Patch, Delete, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Body,
+  Patch,
+  Delete,
+  Req,
+  Query,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -24,6 +32,11 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(req.userId, updateUserDto);
+  }
+
+  @Get('/all')
+  getAllUsers(@Query('page') page: string) {
+    return this.usersService.getAllUsers(+page);
   }
 
   @Delete()

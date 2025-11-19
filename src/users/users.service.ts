@@ -175,6 +175,40 @@ export class UsersService {
     return 'Profile updated successfully';
   }
 
+  async getAllUsers(page: number) {
+    const pageSize = 20;
+    const skip = (page - 1) * pageSize;
+
+    const [users, totalUsers] = await Promise.all([
+      this.prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          totalPixelsPlaced: true,
+          profileImage: true,
+          discord: {
+            select: {
+              discordId: true,
+              global_name: true,
+              username: true,
+              avatar: true,
+            },
+          },
+        },
+        orderBy: {
+          totalPixelsPlaced: 'desc',
+        },
+        take: pageSize,
+        skip,
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    const totalPages = Math.ceil(totalUsers / pageSize);
+
+    return { users, hasMore: page < totalPages };
+  }
+
   remove(id: number) {
     return `This action removes a #${id} user`;
   }
