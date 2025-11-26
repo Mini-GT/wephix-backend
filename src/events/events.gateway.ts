@@ -1,5 +1,4 @@
 import {
-  ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -32,7 +31,7 @@ export class EventsGateway
 
   handleDisconnect(client: Socket) {
     console.log(`Client disconnected: ${client.id}`);
-    this.server.disconnectSockets(true);
+    // this.server.disconnectSockets(true);
   }
 
   @SubscribeMessage('updatedPixel')
