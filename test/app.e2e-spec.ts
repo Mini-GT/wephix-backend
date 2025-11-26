@@ -17,9 +17,10 @@ describe('AppController (e2e)', () => {
   });
 
   it('/(GET)', () => {
+    const params = 'test';
     return request(app.getHttpServer())
-      .get('/')
+      .get(`/cats/${params}`)
       .expect(200)
-      .expect('Hello World!');
+      .expect(`Hello World! ${params}`);
   });
 });
