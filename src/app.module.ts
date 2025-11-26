@@ -21,6 +21,7 @@ import { CanvasController } from './canvas/canvas.controller';
 import { GuildController } from './guild/guild.controller';
 import { ReportsController } from './reports/reports.controller';
 import { UsersController } from './users/users.controller';
+import { AdminMiddleware } from './middleware/admin.middleware';
 
 @Module({
   imports: [
@@ -54,5 +55,9 @@ export class AppModule implements NestModule {
     consumer
       .apply(AuthMiddleware)
       .forRoutes(GuildController, ReportsController, UsersController);
+
+    consumer
+      .apply(AdminMiddleware)
+      .forRoutes({ path: 'api/v1/users/all', method: RequestMethod.GET });
   }
 }
