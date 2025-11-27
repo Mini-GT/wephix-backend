@@ -1,0 +1,10 @@
+/node_modules/
+Dockerfile
+.turbo
+dist
+test
+.git
+.dockerignore
+Dockerfile
+*.log
+*.md
