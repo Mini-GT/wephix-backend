@@ -31,13 +31,16 @@ export class AuthController {
     @Body() loginAuthDto: LoginAuthDto,
   ) {
     const NODE_ENV = this.config.get('NODE_ENV');
+    const domainUrl = this.config.get('domainUrl');
 
     const { token } = await this.authService.login(loginAuthDto);
     res.cookie('loginToken', token, {
       httpOnly: true,
       secure: NODE_ENV,
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      domain: domainUrl,
+      path: '/',
     });
 
     res.cookie('hasLoginToken', true, {
@@ -45,6 +48,8 @@ export class AuthController {
       secure: NODE_ENV,
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      domain: domainUrl,
+      path: '/',
     });
 
     return 'Login successful';
@@ -63,12 +68,15 @@ export class AuthController {
     }
 
     const NODE_ENV = this.config.get('NODE_ENV');
+    const domainUrl = this.config.get('domainUrl');
     const { token } = await this.authService.oauth2(code);
     res.cookie('loginToken', token, {
       httpOnly: true,
       secure: NODE_ENV,
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      domain: domainUrl,
+      path: '/',
     });
 
     res.cookie('hasLoginToken', true, {
@@ -76,6 +84,8 @@ export class AuthController {
       secure: NODE_ENV,
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      domain: domainUrl,
+      path: '/',
     });
   }
 }
