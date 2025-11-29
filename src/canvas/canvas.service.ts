@@ -131,7 +131,13 @@ export class CanvasService {
 
     let user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, charges: true, cooldownUntil: true, name: true },
+      select: {
+        id: true,
+        charges: true,
+        cooldownUntil: true,
+        name: true,
+        role: true,
+      },
     });
 
     if (!user) throw new NotFoundException('User not found');
@@ -171,7 +177,7 @@ export class CanvasService {
       },
     });
 
-    const newCharges = charges - 1;
+    const newCharges = user.role === 'ADMIN' ? charges : charges - 1;
 
     // FIXED: calculate remaining time + add 30 seconds for new paint
     const RECHARGE_TIME_MS = 30_000;
