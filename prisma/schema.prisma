@@ -50,7 +50,7 @@ model User {
   forgotPassVerifyToken  String?
 
   totalPixelsPlaced Int       @default(0)
-  charges           Int       @default(30) // how many uses left
+  charges           Int       @default(1000) // how many uses left
   cooldownUntil     DateTime?
 
   // Relations

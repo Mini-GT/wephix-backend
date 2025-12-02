@@ -1,5 +1,5 @@
 export function calculateCharges(charges: number, cooldownUntil: Date | null) {
-  const MAX_CHARGES = 30;
+  const MAX_CHARGES = 1000;
   const RECHARGE_TIME_MS = 30_000;
   const now = Date.now();
 

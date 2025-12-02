@@ -22,7 +22,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Body() loginAuthDto: LoginAuthDto,
   ) {
-    const NODE_ENV = this.config.get('NODE_ENV');
+    const NODE_ENV = this.config.get('NODE_ENV') === 'production';
     const domainUrl = this.config.get('domainUrl');
 
     const { token } = await this.authService.login(loginAuthDto);
@@ -50,7 +50,7 @@ export class AuthController {
   @Post('discord')
   // @Redirect(`${process.env.clientUrl}/login`)
   async oauth2(
-    @Res({ passthrough: true }) res: Response,
+    // @Res({ passthrough: true }) res: Response,
     @Body('code') code: string,
   ) {
     // const NODE_ENV = this.config.get('NODE_ENV');
