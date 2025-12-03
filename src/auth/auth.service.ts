@@ -2,10 +2,10 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { signJwt } from '../utils/jwt';
@@ -13,6 +13,7 @@ import { DiscordFields, User } from '@repo/types';
 import bcrypt from 'bcryptjs';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { PasswordResetDto } from './dto/password-reset-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -180,5 +181,55 @@ export class AuthService {
 
     const token = signJwt({ id: user.id }, JWTSECRET, { expiresIn: '7d' });
     return { token };
+  }
+
+  async resetPassword(resetPasswordDto: PasswordResetDto) {
+    const { email, token, newPassword } = resetPasswordDto;
+    const now = new Date();
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: email,
+        forgotPassVerifyToken: token,
+        forgotPassTokenExpiry: { gt: new Date() },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException("User doesn't exist");
+    }
+
+    if (
+      !user?.forgotPassVerifyToken ||
+      !user.forgotPassTokenExpiry ||
+      user.forgotPassTokenExpiry < now ||
+      user.forgotPassVerifyToken !== token
+    ) {
+      throw new UnauthorizedException('Token has expired');
+    }
+
+    if (user.password) {
+      const isSamePassword = await bcrypt.compare(newPassword, user.password);
+      if (isSamePassword) {
+        throw new BadRequestException(
+          'New password must be different from the current password',
+        );
+      }
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 8);
+
+    await this.prisma.user.update({
+      where: {
+        email,
+      },
+      data: {
+        password: hashedPassword,
+        forgotPassVerifyToken: null,
+        forgotPassTokenExpiry: null,
+      },
+    });
+
+    return 'Reset password changed successfully';
   }
 }

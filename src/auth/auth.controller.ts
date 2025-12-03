@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Res } from '@nestjs/common';
+import { Controller, Post, Body, Res, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { ConfigService } from '@nestjs/config';
 import { type Response } from 'express';
 import { LoginAuthDto } from './dto/login-auth.dto';
+import { PasswordResetDto } from './dto/password-reset-auth.dto';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -76,5 +77,10 @@ export class AuthController {
     // });
 
     return { token };
+  }
+
+  @Patch('password/reset')
+  async passwordReset(@Body() passwordReset: PasswordResetDto) {
+    return this.authService.resetPassword(passwordReset);
   }
 }
