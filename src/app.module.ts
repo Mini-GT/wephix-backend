@@ -22,6 +22,7 @@ import { GuildController } from './guild/guild.controller';
 import { ReportsController } from './reports/reports.controller';
 import { UsersController } from './users/users.controller';
 import { AdminMiddleware } from './middleware/admin.middleware';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { AdminMiddleware } from './middleware/admin.middleware';
     EventsModule,
     GuildModule,
     ReportsModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
