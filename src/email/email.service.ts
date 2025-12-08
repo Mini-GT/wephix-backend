@@ -14,7 +14,7 @@ export class EmailService {
     });
 
     if (!user) {
-      throw new NotFoundException("Email doesn't exist");
+      throw new NotFoundException('Email is not registered');
     }
 
     const now = new Date();
