@@ -4,6 +4,7 @@ import { CreateCanvasDto } from './dto/create-canvas.dto';
 import { UpdateCanvasDto } from './dto/update-canvas.dto';
 import { InspectCanvasDto } from './dto/inspect-canvas.dto';
 import { type AuthenticatedRequest } from '../types/express';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('api/v1/canvas')
 export class CanvasController {
@@ -27,6 +28,7 @@ export class CanvasController {
     return this.canvasService.findOne(+canvasId);
   }
 
+  @Throttle({ default: { limit: 1, ttl: 300 } })
   @Patch(':canvasId')
   updateCanvasPixel(
     @Param('canvasId') canvasId: string,

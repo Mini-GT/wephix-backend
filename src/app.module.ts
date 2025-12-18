@@ -23,9 +23,15 @@ import { ReportsController } from './reports/reports.controller';
 import { UsersController } from './users/users.controller';
 import { AdminMiddleware } from './middleware/admin.middleware';
 import { EmailModule } from './email/email.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60000, limit: 100 }],
+      errorMessage: 'Too many requests',
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env.development',
@@ -42,7 +48,13 @@ import { EmailModule } from './email/email.module';
     EmailModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
